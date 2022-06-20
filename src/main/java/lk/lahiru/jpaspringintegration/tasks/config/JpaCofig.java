@@ -34,4 +34,9 @@ prop.put("hibernate.hdm2ddl.auto",env.getRequiredPropery("hibernate.hdm2ddl.auto
 return prop;
     }
 
+    public PlatformTransactionManager transactioManager(EntityManagerfactory entityManagerfactory){
+        return  new JpaTransactionManager(emf);
+
+    }
+
 }
