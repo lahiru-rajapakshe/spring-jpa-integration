@@ -29,7 +29,9 @@ public class JpaCofig {
     }
 
     privare Properties jpaProperties(){
-
+Properties prop=new Properties();
+prop.put("hibernate.hdm2ddl.auto",env.getRequiredPropery("hibernate.hdm2ddl.auto"));
+return prop;
     }
 
 }
