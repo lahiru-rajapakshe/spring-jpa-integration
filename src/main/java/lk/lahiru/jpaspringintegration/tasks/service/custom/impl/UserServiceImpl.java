@@ -37,8 +37,7 @@ public class UserServiceImpl implements UserService {
     public UserDTO registerUser(Part picture,
                                 String appLocation,
                                 UserDTO user) {
-        try {
-            user.setId(UUID.randomUUID().toString());
+
 
             if (picture != null) {
                 user.setPicture(user.getPicture() + user.getId());
@@ -62,8 +61,6 @@ public class UserServiceImpl implements UserService {
             }
 
             return user;
-        } catch (Throwable t) {
-            throw new FailedExecutionException("Failed to save the user", t);
         }
     }
 
@@ -73,8 +70,7 @@ public class UserServiceImpl implements UserService {
     }
 
     public void deleteUser(String userId, String appLocation) {
-        try {
-            userDAO.deleteById(userId);
+
 
             new Thread(() -> {
                 Path imagePath = Paths.get(appLocation, "uploads",
@@ -85,16 +81,11 @@ public class UserServiceImpl implements UserService {
                     logger.warning("Failed to delete the image: " + imagePath.toAbsolutePath());
                 }
             }).start();
-        } catch (Throwable t) {
-            throw new FailedExecutionException("Failed to delete the user", t);
         }
-
     }
 
     public void updateUser(UserDTO user, Part picture,
                            String appLocation) {
-        try {
-            user.setPassword(DigestUtils.sha256Hex(user.getPassword()));
 
             // Fetch the current user
             User userEntity = userDAO.findById(user.getId()).get();
@@ -119,8 +110,6 @@ public class UserServiceImpl implements UserService {
                 Files.deleteIfExists(picturePath);
             }
 
-        } catch (Throwable e) {
-            throw new FailedExecutionException("Failed to update the user", e);
         }
     }
 
