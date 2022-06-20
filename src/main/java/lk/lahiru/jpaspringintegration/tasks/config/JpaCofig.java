@@ -1,5 +1,7 @@
 package lk.lahiru.jpaspringintegration.tasks.config;
-
+@Configuration
+@PropertySource("classpath:application.properties")
+@PropertySource("classpath:application-prod.properties")
 public class JpaCofig {
     private final Environment env;
 
@@ -24,6 +26,10 @@ public class JpaCofig {
         jpaVendorAdapter.setDatabasePlatform(env.getRequiredProperty("hibernate.dialect"));
         jpaVendorAdapter.setShowSql(env.getProperty("hibernate.show_sql", Boolean.class, false));
         return jpaVendorAdapter;
+    }
+
+    privare Properties jpaProperties(){
+
     }
 
 }
