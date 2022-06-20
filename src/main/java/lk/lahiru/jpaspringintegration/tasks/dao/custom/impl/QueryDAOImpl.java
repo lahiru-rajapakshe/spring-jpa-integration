@@ -11,6 +11,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class QueryDAOImpl implements QueryDAO {
 
+    @PersistanceContext private EntityManager em;
     private final SessionFactory sessionFactory;
 
     public QueryDAOImpl(SessionFactory sessionFactory) {
