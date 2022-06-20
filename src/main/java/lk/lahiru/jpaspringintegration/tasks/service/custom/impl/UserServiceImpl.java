@@ -1,54 +1,43 @@
 package lk.lahiru.jpaspringintegration.tasks.service.custom.impl;
 
-import lk.ijse.dep8.tasks.dao.DAOFactory;
 import lk.ijse.dep8.tasks.dao.custom.UserDAO;
 import lk.ijse.dep8.tasks.dto.UserDTO;
 import lk.ijse.dep8.tasks.entity.User;
 import lk.ijse.dep8.tasks.service.custom.UserService;
 import lk.ijse.dep8.tasks.service.exception.FailedExecutionException;
 import lk.ijse.dep8.tasks.service.util.EntityDTOMapper;
-import lk.ijse.dep8.tasks.service.util.ExecutionContext;
-import lk.ijse.dep8.tasks.service.util.JNDIConnectionPool;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.servlet.http.Part;
-import javax.sql.DataSource;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.logging.Logger;
 
+@Scope("prototype")
+@Component
+@Transactional
 public class UserServiceImpl implements UserService {
 
-    private DataSource pool;
-
-    public UserServiceImpl() {
-        pool = JNDIConnectionPool.getInstance().getDataSource();
-    }
-
     private final Logger logger = Logger.getLogger(UserServiceImpl.class.getName());
+    @Autowired
+    private UserDAO userDAO;
 
-    public boolean existsUser( String userIdOrEmail)  {
-        try (Connection connection = pool.getConnection()) {
-            UserDAO userDAO = DAOFactory.getInstance().getDAO(connection, DAOFactory.DAOTypes.USER);
-            return userDAO.existsUserByEmailOrId(userIdOrEmail);
-        } catch (SQLException t) {
-            throw new FailedExecutionException("Failed to check the existence", t);
-        }
+    public boolean existsUser(String userIdOrEmail) {
+        return userDAO.existsUserByEmailOrId(userIdOrEmail);
     }
 
     public UserDTO registerUser(Part picture,
                                 String appLocation,
-                                UserDTO user)  {
-        Connection connection = null;
+                                UserDTO user) {
         try {
-            connection = pool.getConnection();
-            connection.setAutoCommit(false);
             user.setId(UUID.randomUUID().toString());
 
             if (picture != null) {
@@ -56,7 +45,6 @@ public class UserServiceImpl implements UserService {
             }
             user.setPassword(DigestUtils.sha256Hex(user.getPassword()));
 
-            UserDAO userDAO =  DAOFactory.getInstance().getDAO(connection, DAOFactory.DAOTypes.USER);
             // DTO -> Entity
             User userEntity = EntityDTOMapper.getUser(user);
             User savedUser = userDAO.save(userEntity);
@@ -73,34 +61,19 @@ public class UserServiceImpl implements UserService {
                 picture.write(picturePath);
             }
 
-            connection.commit();
             return user;
         } catch (Throwable t) {
-            if (connection != null)
-            ExecutionContext.execute(connection::rollback);
             throw new FailedExecutionException("Failed to save the user", t);
-        } finally {
-            if (connection != null){
-                Connection tempConnection = connection;
-                ExecutionContext.execute(() -> tempConnection.setAutoCommit(true));
-                ExecutionContext.execute(connection::close);
-            }
         }
     }
 
-    public UserDTO getUser(String userIdOrEmail)  {
-        try (Connection connection = pool.getConnection()) {
-            UserDAO userDAO = DAOFactory.getInstance().getDAO(connection, DAOFactory.DAOTypes.USER);
-            Optional<User> userWrapper = userDAO.findUserByIdOrEmail(userIdOrEmail);
-            return EntityDTOMapper.getUserDTO(userWrapper.orElse(null));
-        } catch (SQLException t) {
-            throw new FailedExecutionException("Failed to fetch the user", t);
-        }
+    public UserDTO getUser(String userIdOrEmail) {
+        Optional<User> userWrapper = userDAO.findUserByIdOrEmail(userIdOrEmail);
+        return EntityDTOMapper.getUserDTO(userWrapper.orElse(null));
     }
 
-    public void deleteUser(String userId, String appLocation)  {
-        try (Connection connection = pool.getConnection()) {
-            UserDAO userDAO = DAOFactory.getInstance().getDAO(connection, DAOFactory.DAOTypes.USER);
+    public void deleteUser(String userId, String appLocation) {
+        try {
             userDAO.deleteById(userId);
 
             new Thread(() -> {
@@ -112,22 +85,16 @@ public class UserServiceImpl implements UserService {
                     logger.warning("Failed to delete the image: " + imagePath.toAbsolutePath());
                 }
             }).start();
-        }catch (SQLException e){
-            throw new FailedExecutionException("Failed to delete the user", e);
+        } catch (Throwable t) {
+            throw new FailedExecutionException("Failed to delete the user", t);
         }
 
     }
 
     public void updateUser(UserDTO user, Part picture,
                            String appLocation) {
-        Connection connection = null;
         try {
-            connection = pool.getConnection();
-            connection.setAutoCommit(false);
-
             user.setPassword(DigestUtils.sha256Hex(user.getPassword()));
-
-            UserDAO userDAO =  DAOFactory.getInstance().getDAO(connection, DAOFactory.DAOTypes.USER);
 
             // Fetch the current user
             User userEntity = userDAO.findById(user.getId()).get();
@@ -152,17 +119,8 @@ public class UserServiceImpl implements UserService {
                 Files.deleteIfExists(picturePath);
             }
 
-            connection.commit();
         } catch (Throwable e) {
-            if (connection != null)
-            ExecutionContext.execute(connection::rollback);
             throw new FailedExecutionException("Failed to update the user", e);
-        } finally {
-            if (connection != null){
-                Connection tempConnection = connection;
-                ExecutionContext.execute(() -> tempConnection.setAutoCommit(true));
-                ExecutionContext.execute(connection::close);
-            }
         }
     }
 
