@@ -1,8 +1,14 @@
 package lk.lahiru.jpaspringintegration.tasks.config;
+
+import com.sun.deploy.Environment;
+
+import javax.sql.DataSource;
+
 @Configuration
 @PropertySource("classpath:application.properties")
 @PropertySource("classpath:application-prod.properties")
 @EnabletransactionManagement
+@PropertySource
 public class JpaCofig {
     private final Environment env;
 
@@ -44,4 +50,8 @@ return prop;
         return  new PersistanceExceptionTransactionPostProcessor();
     }
 
+    @Bean("datSource")
+    public DataSource dataSourceFortesting(){
+        new DriverManagerdataSource();
+    }
 }
