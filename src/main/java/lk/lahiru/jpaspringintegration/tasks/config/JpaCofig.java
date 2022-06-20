@@ -2,6 +2,7 @@ package lk.lahiru.jpaspringintegration.tasks.config;
 @Configuration
 @PropertySource("classpath:application.properties")
 @PropertySource("classpath:application-prod.properties")
+@EnabletransactionManagement
 public class JpaCofig {
     private final Environment env;
 
