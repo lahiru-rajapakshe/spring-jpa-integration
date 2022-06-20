@@ -40,4 +40,8 @@ return prop;
 
     }
 
+    public static PersistanseExceptionTransactionPostProcessor persistanseExceptionTransactionPostProcessor(){
+        return  new PersistanceExceptionTransactionPostProcessor();
+    }
+
 }
