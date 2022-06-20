@@ -16,4 +16,14 @@ public class JpaCofig {
         lcemfb.setPackagesToScan("lk.ijse.dep8.tasks.entity");
         return lcemfb;
     }
+
+    @Bean
+    public JpaVendorAdapter jpaVendorAdapter(){
+        HibernateJpaVendorAdapter jpaVendorAdapter = new HibernateJpaVendorAdapter();
+        jpaVendorAdapter.setDatabase(Database.MYSQL);
+        jpaVendorAdapter.setDatabasePlatform(env.getRequiredProperty("hibernate.dialect"));
+        jpaVendorAdapter.setShowSql(env.getProperty("hibernate.show_sql", Boolean.class, false));
+        return jpaVendorAdapter;
+    }
+
 }
